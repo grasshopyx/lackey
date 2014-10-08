@@ -7,6 +7,9 @@ lackey-x86-linux
 Makefile
 docs
 
+lackey-amd64-darwin
+lackey-x86-darwin
+
 # Object files
 *.o
 *.ko
@@ -31,3 +34,6 @@ docs
 *.eps
 *.pdf
 .DS_Store
+
+# VIM swp
+*.swp

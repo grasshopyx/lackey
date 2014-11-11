@@ -37,7 +37,7 @@ for i, v in ipairs(arg) do
    elseif (v:sub(1,2) == "-q") then
       --print("minimum superblock size:")
       quit_at = tonumber(v:sub(3))
-   elseif (v:sub(1,2) == "-mg") then
+   elseif (v:sub(1,2) == "-mg") then	-- I think it should be v:sub(1,3) here
       --print("minimum superblock size:")
       sb_merge = true
    end
@@ -229,7 +229,7 @@ function set_sb_weight(w)
    sb_weight = w
 end
 
-function parse_lackey_log(sb_size, sb_merge)
+function parse_lackey_log(sb_size, sb_merge)	-- sb_merge is unused
    local i = 0
    local weight_accu = 0
    for line in io.lines() do

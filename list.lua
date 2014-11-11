@@ -4,7 +4,7 @@ module(...)
 
 local _m = {}
 
-function init()
+function init()	-- haven't been used
    local m = {first = 0, last = -1}
    for k, v in pairs(_m) do
       m[k] = v

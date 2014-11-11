@@ -4,7 +4,7 @@
 
 -- TODO: different instances of the same sb shall be treated as different sb's
 -- TODO: do we really support memory writing w/ renaming?
--- TODO: super block merging coelessing
+-- TODO: super block merging coelessing -- coalescing?
 --       the sb's that only depends on a single predecessor, can be merged into the predecessor
 
 local List = require "list"
@@ -39,7 +39,7 @@ for i, v in ipairs(arg) do
    elseif (v:sub(1,2) == "-q") then
       --print("minimum superblock size:")
       quit_at = tonumber(v:sub(3))
-   elseif (v:sub(1,2) == "-mg") then
+   elseif (v:sub(1,2) == "-mg") then -- seemingly should be sub(1,3) here
       --print("minimum superblock size:")
       sb_merge = true
    end

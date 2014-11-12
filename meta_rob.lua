@@ -232,11 +232,16 @@ end
 function parse_lackey_log(sb_size, sb_merge)	-- sb_merge is unused
    local i = 0
    local weight_accu = 0
+   local first_sb_flag=true
    for line in io.lines() do
       if line:sub(1,2) ~= '==' then
 	 i = i + 1
 	 local k = line:sub(1,2)
 	 if k == 'SB' then
+		 if first_sb_flag then
+			 start_sb(line:sub(4))
+			 first_sb_flag=false
+		 end
 	    -- if not sb_merge or
 	    if weight_accu >= sb_size then
 	       set_sb_weight(weight_accu)

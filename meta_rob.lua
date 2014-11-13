@@ -8,7 +8,7 @@
 local List = require "list"
 
 function logd(...)
-   -- print(...)
+   print(...)
 end
 
 -- the parameters that affects the parallelism 
@@ -251,18 +251,29 @@ function parse_lackey_log(sb_size, sb_merge)	-- sb_merge is unused
 	    end
 	 -- elseif k == 'I ' then	    
 	 elseif k == ' S' then
-	    local d_addr = tonumber(line:sub(4,11), 16)
+	    -- local d_addr = tonumber(line:sub(4,11), 16)	-- why 11?
+	    local d_addr, _ = string.match(line:sub(4), "(%w+),(%d+)")	-- I think it's unnecessary to use number type
+	    d_addr=tonumber(d_addr,16)
+
 	    mem_writer[d_addr] = sb_addr
 	    mem_access[#mem_access + 1] = {type=1, addr=d_addr}
+	    -- logd("S", string.format("%x",d_addr))
 	 elseif k == ' L' then
-	    local d_addr = tonumber(line:sub(4,11), 16)
+	    -- local d_addr = tonumber(line:sub(4,11), 16)
+	    local d_addr, mem_offset = string.match(line:sub(4), "(%w+),(%d+)")	-- I think it's unnecessary to use number type
+	    d_addr=tonumber(d_addr,16)
+	    -- logd(line)
+	    -- logd(d_addr,mem_offset)
+	    -- logd("L", string.format("%x",d_addr))
 	    mem_access[#mem_access + 1] = {type=0, addr=d_addr}
 
 	    local dep = mem_writer[d_addr]
 	    if dep and dep ~= sb_addr then 
 	       -- io.write("L "..line:sub(4,11).." ")
 	       -- add_depended(dep) 
-	       mem_input[d_addr] = tonumber(line:sub(13))
+	       -- mem_input[d_addr] = tonumber(line:sub(14))	-- why 13?
+	       mem_input[d_addr] = tonumber(mem_offset)
+	       -- logd("L",mem_input[d_addr])
 	    end
 	 elseif k == ' P' then
 	    local reg_o, offset_sb = string.match(line:sub(4), "(%d+) (%d+)")
@@ -270,7 +281,7 @@ function parse_lackey_log(sb_size, sb_merge)	-- sb_merge is unused
 	    -- reg_writer_seq[tonumber(reg_o)] = blk_seq
 	    reg_out_offset[reg_o] = offset_sb
 	    reg_io[#reg_io + 1] = {io='o', reg=reg_o}
-	    logd("P", sb_addr, reg_o, offset_sb, reg_out_offset)
+	    -- logd("P", sb_addr, reg_o, offset_sb, reg_out_offset)
 	 elseif k == ' G' then
 	    reg_i, offset_sb = string.match(line:sub(4), "(%d+) (%d+)")
 	    local d_addr = tonumber(reg_i)
@@ -282,8 +293,8 @@ function parse_lackey_log(sb_size, sb_merge)	-- sb_merge is unused
 	       reg_input[d_addr] = 1
 	       reg_in_offset[reg_i] = offset_sb
 	       reg_io[#reg_io + 1] = {io='i', reg=reg_i, dep=dep}
-	       logd("G", sb_addr, reg_i, offset_sb, dep)
 	    end
+	    -- logd("G", sb_addr, reg_i, offset_sb, dep)
 	 -- elseif k == ' D' then
 	 --    add_depended(line:sub(4))
 	 elseif k == ' W' then

@@ -64,19 +64,20 @@ end
 local mem_writer = {}
 -- to record which SB writes to a specific register
 local reg_writer = {}
--- the memory access sequence
+--
+-- the memory access sequence of current merged-SB, I think
 local mem_access = {}
 
 -- data input of the current SB
 local mem_input = {}
 local reg_input = {}
 
-
 local sb_addr = 0
 -- the SB on which the current sb depends
 local deps = {}
 local sb_weight = 0
 
+-- current SB
 local reg_out_offset = {}
 local reg_in_offset = {}
 local reg_io = {}
@@ -100,6 +101,7 @@ function place_sb(rob, sb)
    for k, v in pairs(deps) do
       i = i + 1
       if d <= v.d then d = v.d end
+      -- logd(k, v.d)
    end
 
    -- look for a non-full line which can hold the sb
@@ -216,7 +218,7 @@ function end_sb()
    reg_in_offset = {}
    reg_io = {}
 
-end				-- function end_sb()
+end				-- end_sb()
 
 -- the table deps is a set, we use addr as key, so searching it is
 -- efficient
@@ -260,10 +262,10 @@ function parse_lackey_log(sb_size, sb_merge)	-- sb_merge is unused
 	    -- logd("S", string.format("%x",d_addr))
 	 elseif k == ' L' then
 	    -- local d_addr = tonumber(line:sub(4,11), 16)
-	    local d_addr, mem_offset = string.match(line:sub(4), "(%w+),(%d+)")	-- I think it's unnecessary to use number type
+	    local d_addr, mem_size = string.match(line:sub(4), "(%w+),(%d+)")	-- I think it's unnecessary to use number type
 	    d_addr=tonumber(d_addr,16)
 	    -- logd(line)
-	    -- logd(d_addr,mem_offset)
+	    -- logd(d_addr,mem_size)
 	    -- logd("L", string.format("%x",d_addr))
 	    mem_access[#mem_access + 1] = {type=0, addr=d_addr}
 
@@ -272,7 +274,7 @@ function parse_lackey_log(sb_size, sb_merge)	-- sb_merge is unused
 	       -- io.write("L "..line:sub(4,11).." ")
 	       -- add_depended(dep) 
 	       -- mem_input[d_addr] = tonumber(line:sub(14))	-- why 13?
-	       mem_input[d_addr] = tonumber(mem_offset)
+	       mem_input[d_addr] = tonumber(mem_size)
 	       -- logd("L",mem_input[d_addr])
 	    end
 	 elseif k == ' P' then
@@ -289,10 +291,10 @@ function parse_lackey_log(sb_size, sb_merge)	-- sb_merge is unused
 	    -- if dep and dep ~= sb_addr and blk_seq ~= reg_writer_seq[d_addr] then
 	    if dep and dep ~= sb_addr then 
 	       -- io.write("G "..line:sub(4).." ")
-	       add_depended(dep) 
+	       add_depended(dep) 	-- what's this
 	       reg_input[d_addr] = 1
 	       reg_in_offset[reg_i] = offset_sb
-	       reg_io[#reg_io + 1] = {io='i', reg=reg_i, dep=dep}
+	       reg_io[#reg_io + 1] = {io='i', reg=reg_i, dep=dep}	-- what's this
 	    end
 	    -- logd("G", sb_addr, reg_i, offset_sb, dep)
 	 -- elseif k == ' D' then

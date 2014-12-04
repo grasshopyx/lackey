@@ -26,6 +26,8 @@ function exe_blocks(core_num, rob_exe_log, miss_log)
 
     -- local first_flag=true
 
+    issue_num=0
+
     for line in rob_exe_log:lines() do
         if line:sub(1,1) ~= "#" then	 
             if line:sub(1,5) == "ISSUE" then
@@ -33,15 +35,11 @@ function exe_blocks(core_num, rob_exe_log, miss_log)
                 local max_clk = 0
                 -- io.write("EXE ")
 
-                -- if first_flag ~= true then
-                    -- io.stderr:write("ISSUE", line:sub(6),":\t")
-                    -- for _, c in ipairs(core) do
-                    --     io.stderr:write(c.clk_pend, " ")
-                    -- end
-                    -- io.stderr:write("\n")
-                -- else
-                --     first_flag = false
-                -- end
+--                 issue_num=issue_num+1
+--                 io.stderr:write("ISSUE No.",issue_num,"\n")
+--                 for _, c in ipairs(core) do
+--                     io.stderr:write(c.clk_pend," ")
+--                 end
 
                 for _, c in ipairs(core) do
                     if max_clk < c.clk_pend then max_clk = c.clk_pend end
@@ -49,7 +47,15 @@ function exe_blocks(core_num, rob_exe_log, miss_log)
                     c.clk_pend = 0
                 end
                 clkcount = clkcount + max_clk
+
                 -- print(' CLK', max_clk)
+
+                -- io.stderr:write("\nclkcount:",clkcount,"\n") 
+                -- local icount=0
+                -- for _, v in pairs(core) do
+                --     icount = icount + v.icount
+                -- end
+                -- io.stderr:write("icount:",icount,"\nipc:", icount/clkcount,"\n")
 
             elseif line:sub(1,2) == "SB" then
                 addr, current_core, _icount = string.match(line:sub(4), "(%x+) (%d+) (%d+)")

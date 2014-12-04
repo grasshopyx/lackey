@@ -91,6 +91,9 @@ function start_sb(addr)
     sb_addr = addr
 end
 
+local issue_num=1
+local sb_num=0
+
 -- place the superblock in the rob
 function place_sb(rob, sb)
 
@@ -99,18 +102,34 @@ function place_sb(rob, sb)
     -- d is the depth, i.e. in which level/line of the rob the sb should be put
     local d = buf.first
     local i = 0
+    -- io.stderr:write("place sb_num:", sb.sb_num, " ")
     for k, v in pairs(deps) do
         i = i + 1
         -- logd(sb.addr, d)
-        if d <= v.d then d = v.d end
+        if d <= v.d then 
+            d = v.d 
+            -- io.stderr:write("dep.sb_num=",v.sb_num," dep.depth=", v.d, " ")
+            -- dep_flag=true
+        end
         -- logd(k, v.d)
         -- logd(sb.addr, d)
+    end
+
+    -- for _,dep in pairs(deps) do
+    --     io.stderr:write("dep.sb_num", dep.sb_num, " ")
+    -- end
+
+    -- io.stderr:write(" depth=", d, " ")
+
+
+    if next(deps) then    -- the deps is not empty
+        d=d+1
     end
 
     -- look for a non-full line which can hold the sb
     found_slot = false
     local l
-    for i=d+1, buf.last do
+    for i=d, buf.last do
         l = buf[i]
         -- if #l < rob.WIDTH then 
         if List.size(l) < rob.WIDTH then
@@ -127,6 +146,11 @@ function place_sb(rob, sb)
         l = buf[d]
     end
 
+    -- io.stderr:write("adapted depth=", d, "\n")
+    -- if dep_flag == true then
+    --     io.stderr:write("Yes\n")
+    -- end
+
     -- place the sb in the proper level of the rob
     sb['d'] = d 
     -- l[#l + 1] = sb		-- the line is a List
@@ -137,6 +161,7 @@ end
 -- function place_sb(rob, sb)
 
 -- issue a line of sb's from the rob when necessary
+sum_weight=0
 function issue_sb(rob)
     local buf = rob.buf
     -- if List.size(buf) > rob.MAX then
@@ -153,24 +178,35 @@ function issue_sb(rob)
         local width = 0
 
         -- TODO add a switch verbose or terse
-        print('ISSUE', List.size(l))
+        issue_num=issue_num+1
+        print('ISSUE', List.size(l)," No.",issue_num)
 
         local cid = 1
         while List.size(l) > 0 do
             v = List.popleft(l)
             --for k, v in ipairs(l) do
-            width = width + 1
+            width = width + 1   -- unused
             w_sum = w_sum + v.w
             if w_max < 0 + v.w then
                 w_max = 0 + v.w
             end
 
-            print(string.format('SB %s %d %d', v.addr, cid, v.w))
+
+            -- if v.sb_num == 10282 then
+                -- io.stderr:write("\nsb_num=",v.sb_num, "\n")
+                -- for _,dep in pairs(deps) do
+                --     io.stderr:write(dep.sb_num,' ')
+                -- end
+            -- end
+
+            print(string.format('SB %s %d %d %d', v.addr, cid, v.w, v.sb_num))
             cid = cid + 1
 
-            for _, mem_rw in ipairs(v.mem_access) do
-                print(string.format('MEM %d %x', mem_rw.type, mem_rw.addr))
-            end	 
+            -- MEM is unused in sequent phase
+            -- for _, mem_rw in ipairs(v.mem_access) do
+            --     print(string.format('MEM %d %x', mem_rw.type, mem_rw.addr))
+            -- end	 
+            -- sum_weight = sum_weight + v.w
 
             sbs_run[v.addr] = sbs[v.addr]
             sbs[v.addr] = nil
@@ -181,6 +217,49 @@ function issue_sb(rob)
     end
 end
 
+function emptying_rob(rob)
+    local buf = rob.buf
+    while List.size(buf) > 0 do
+
+        -- count=count+1
+        -- logd("count=",count)
+
+        local l = List.popleft(buf)
+        local w_sum = 0
+        local w_max = 0     -- unused
+        local width = 0
+
+        -- TODO add a switch verbose or terse
+        issue_num=issue_num+1
+        print('ISSUE', List.size(l)," No.",issue_num)
+
+        local cid = 1
+        while List.size(l) > 0 do
+            v = List.popleft(l)
+            --for k, v in ipairs(l) do
+            width = width + 1   -- unused
+            w_sum = w_sum + v.w
+            if w_max < 0 + v.w then
+                w_max = 0 + v.w
+            end
+
+            print(string.format('SB %s %d %d %d', v.addr, cid, v.w, v.sb_num))
+            cid = cid + 1
+
+            -- MEM is unused in sequent phase
+            -- for _, mem_rw in ipairs(v.mem_access) do
+            --     print(string.format('MEM %d %x', mem_rw.type, mem_rw.addr))
+            -- end	 
+            -- sum_weight = sum_weight + v.w
+
+            sbs_run[v.addr] = sbs[v.addr]
+            sbs[v.addr] = nil
+        end      
+
+        -- TODO add a switch verbose or terse
+        -- logd(Core.clocks, w_sum, w_max, width, w_sum/w_max)
+    end
+end
 
 -- the current superblock ends, we'll analyze it here
 function end_sb()
@@ -190,10 +269,21 @@ function end_sb()
     sb.seq = blk_seq
     blk_seq = blk_seq + 1
 
+    sb_num = sb_num + 1
+    sb['sb_num'] = sb_num + 1
+
     sb['addr'] = sb_addr
     sb['w'] = sb_weight
     sb['deps'] = deps
+
+    -- io.stderr:write("End_sb():sb_num=",sb.sb_num,' ')
+    -- for addr,dep in pairs(deps) do
+    --     io.stderr:write("addr ", addr, " dep:",dep.sb_num," ")
+    -- end
+    -- io.stderr:write("\n")
+
     sb['mem_access'] = mem_access
+    
 
     local dep_mem_cnt, dep_reg_cnt = 0, 0
     for k, v in pairs(mem_input) do
@@ -332,3 +422,4 @@ end
 rob_w = core_num
 init_rob(rob, rob_d, rob_w)
 parse_lackey_log(sb_size, sb_merge)
+emptying_rob(rob)
